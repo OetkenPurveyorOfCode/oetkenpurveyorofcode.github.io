@@ -1,0 +1,356 @@
+<html>
+
+<head>
+    <title>The ideal aspect ratio of powerpoint slides</title>
+    <style>
+        body {
+            background-color: #202025;
+            color: white;
+            text-align: center
+        }
+        h3 {
+            color: white;
+            font-family: Verdana;
+            font-size: 1.4em;
+        }
+        p {
+        color: #F1F1F1;
+        font-family: Arial;
+        font-size: 1em;
+        }
+        </style>
+</head>
+
+<body font="arial">
+    <h3>The ideal aspect ratio of PowerPoint slides</h3>
+    <p>
+        Imagine you are in the hypothetical scneario of having to create a presentation
+         but you do not know whether the projector uses the 
+         16:9 or the 4:3
+         aspect ratio. 
+    </p>
+    <p>
+        If you choose 4:3 for your slides it will waste space on the side of a 16:9 projector viewport like so:
+    </p>
+    <div style="text-align:center;">
+        <svg width="160" height="100" >
+            <rect x="0" y="0" width="160" height="90" style="fill: #A03030; stroke: red;stroke-width:4;"></rect>
+            <rect x="20" y="0" width="120" height="90" style="fill: lightblue;stroke: blue;stroke-width:4;"></rect>
+        </svg>
+    </div>
+    <p>
+        You have thos annoying black ("red") bars at either side.<br>
+        On the other hand when you use 16:9 slides on a 4:3 projector:
+    </p>
+    <div style="text-align:center;">
+        <svg width="160" height="100" >
+            <rect x="20" y="0" width="120" height="90" style="fill: #A03030;stroke: red;stroke-width:4;"></rect>
+            <rect x="20" y="11" width="120" height="68" style="fill: lightblue;stroke: blue;stroke-width:4;"></rect>
+        </svg>
+    </div>
+    <p>
+        You now have the opposite problem: Your slides are too wide for the screen, leaving you
+        with black bars at the bottom and top. (highlighted in red)
+    </p>
+    <p>
+        Let's say you want to waste an equal portion of screen space in either case.
+        What aspect ratio should your slides have?
+    </p>
+    <p>
+        Short Answer:
+        <math>
+                <mn>1.5396</mn>
+                <mo>:</mo>
+                <mn>1</mn>
+        </math>
+    </p>
+    <p>
+        Long answer: 
+    </p>
+    <p>
+        You want to waste equal Area in either case. In other words:
+
+    </p>
+    <p>
+        <math>
+            <mrow>
+                <mfrac>
+                    <msub>
+                        <mi>A</mi>
+                        <mn><mtext>
+                            slides on 16:9 projector
+                        </mtext></mn>
+                    </msub>
+                    <msub>
+                        <mi>A</mi>
+                        <mn><mtext>
+                            16:9 projector
+                        </mtext></mn>
+                    </msub>
+                </mfrac>
+                <mo>=</mo>
+                <mfrac>
+                    <msub>
+                        <mi>A</mi>
+                        <mn><mtext>
+                            slides on 4:3 projector
+                        </mtext></mn>
+                    </msub>
+                    <msub>
+                        <mi>A</mi>
+                        <mn><mtext>
+                            4:3 projector
+                        </mtext></mn>
+                    </msub>
+                </mfrac>
+            </mrow>
+        </math>
+    </p>
+    <p>
+        Without loss of generality we can assume that both projector screens are 9 units tall.<br>
+        With that we can calculate their Area:
+    </p>
+    <p>
+        <math>
+            <mrow>
+                <msub>
+                    <mi>A</mi>
+                    <mn><mtext>
+                        4:3 projector
+                    </mtext></mn>
+                </msub>
+                <mo>=</mo>
+                <mn>12</mn>
+                <mo>&middot</mo>
+                <mn>9</mn>
+                <mo>=</mo>
+                <mn>108</mn>
+            </mrow>
+        </math>
+        <br>
+        <math>
+            <mrow>
+                <msub>
+                    <mi>A</mi>
+                    <mn><mtext>
+                        16:9 projector
+                    </mtext></mn>
+                </msub>
+                <mo>=</mo>
+                <mn>16</mn>
+                <mo>&middot</mo>
+                <mn>9</mn>
+                <mo>=</mo>
+                <mn>144</mn>
+            </mrow>
+        </math>
+    </p>
+    <p>
+        Let's call the perfect aspect ratio
+        <math>
+            <mi>&alpha;</mi>
+        </math>:
+    </p>
+    <p>
+        <math>
+            <mrow>
+                <mi>&alpha;</mi>
+                <mo>=</mo>
+                <mfrac>
+                    <msub>
+                        <mi>w</mi>
+                        <mn><mtext>ideal</mtext></mn>
+                    </msub>
+                    <msub>
+                        <mi>h</mi>
+                        <mn><mtext>ideal</mtext></mn>
+                    </msub>
+                </mfrac>
+            </mrow>
+        </math>
+    </p>
+    <p>
+    The size of the slides on the 16:9 monitor will have the same height as the projector screen:
+    </p>
+    <p>
+        <math>
+            <mrow>
+                <msub>
+                    <mi>A</mi>
+                    <mn><mtext>
+                        slider on a 16:9 projector
+                    </mtext></mn>
+                </msub>
+                <mo>=</mo>
+                <mi>w</mi>
+                <mo>&middot</mo>
+                <mi>h</mi>
+                <mo>=</mo>
+                <mfrac>
+                    <mi>w</mi>
+                    <mi>h</mi>
+                </mfrac>
+                <mo>&middot;</mo>
+                <msup>
+                    <mi>h</mi>
+                    <mn>2</mn>
+                </msup>
+                <mo>=</mo>
+                <mi>&alpha;</mi>
+                <mo>&middot</mo>
+                <msup>
+                    <mi>h</mi>
+                    <mn>2</mn>
+                </msup>
+                <mo>=</mo>
+                <mn>&alpha;</mn>
+                <mo>&middot</mo>
+                <msup>
+                    <mrow>
+                        <mo>(</mo>
+                        <mn>9</mn>
+                        <mo>)</mo>
+                    </mrow>
+                    <mn>2</mn>
+                </msup>
+                <mo>=</mo>
+                <mn>81</mn>
+                <mi>&alpha;</mi>
+            </mrow>
+        </math>
+    </p>
+    <p>
+        On the 4:3 projector the slides will use the full width:
+    </p>
+    <p>
+        <math>
+            <mrow>
+                <msub>
+                    <mi>A</mi>
+                    <mn><mtext>
+                        slides on a 4:3 projector
+                    </mtext></mn>
+                </msub>
+                <mo>=</mo>
+                <mi>w</mi>
+                <mo>&middot</mo>
+                <mi>h</mi>
+                <mo>=</mo>
+                <msup>
+                    <mi>w</mi>
+                    <mn>2</mn>
+                </msup>
+                <mo>&middot;</mo>
+                <mfrac>
+                    <mi>h</mi>
+                    <mi>w</mi>
+                </mfrac>
+                <mo>=</mo>
+                <mfrac>
+                    <msup>
+                        <mi>w</mi>
+                        <mn>2</mn>
+                    </msup>
+                    <mi>&alpha;</mi>
+                </mfrac>
+                <mo>=</mo>
+                <mfrac>
+                    <mn>144</mn>
+                    <mi>&alpha;</mi>
+                </mfrac>
+            </mrow>
+        </math>
+    </p>
+    Using our equation from above:
+    <p>
+        <math>
+            <mrow>
+                <mfrac>
+                    <msub>
+                        <mi>A</mi>
+                        <mn><mtext>
+                            slides on 16:9 projector
+                        </mtext></mn>
+                    </msub>
+                    <msub>
+                        <mi>A</mi>
+                        <mn><mtext>
+                            16:9 projector
+                        </mtext></mn>
+                    </msub>
+                </mfrac>
+                <mo>=</mo>
+                <mfrac>
+                    <msub>
+                        <mi>A</mi>
+                        <mn><mtext>
+                            slides on 4:3 projector
+                        </mtext></mn>
+                    </msub>
+                    <msub>
+                        <mi>A</mi>
+                        <mn><mtext>
+                            4:3 projector
+                        </mtext></mn>
+                    </msub>
+                </mfrac>
+            </mrow>
+        </math>
+    </p>
+    <p>
+        <math>
+            <mrow>
+                <mfrac>
+                    <mrow>
+                        <mn>81</mn>
+                        <mo>&middot;</mo>
+                        <mn>&alpha;</mn>
+                    </mrow>
+                    <mn>144</mn>
+                </mfrac>
+                <mo>=</mo>
+                <mfrac>
+                    <mfrac>
+                        <mn>144</mn>
+                        <mi>&alpha;</mi>
+                    </mfrac>
+                    <mn>108</mn>
+                </mfrac>
+            </mrow>
+        </math>
+    </p>
+    Rearranging:
+    <p>
+    <math>
+        <mrow>
+            <mi>&alpha;</mi>
+            <mo>=</mo>
+            <msqrt>
+                <mrow>
+                    <mfrac>
+                        <mn>144</mn>
+                        <mn>108</mn>
+                    </mfrac>
+                    <mo>&middot;</mo>
+                    <mfrac>
+                        <mn>144</mn>
+                        <mn>81</mn>
+                    </mfrac>
+                </mrow>
+            </msqrt>
+            <mo>=</mo>
+            <mfrac>
+                <mn>8</mn>
+                <mn>9</mn>
+            </mfrac>
+            <msqrt><mn>3</mn></msqrt>
+            <mo>=</mo>
+            <mn>1.5396</mn>
+        </mrow>
+    </math>
+    <p>
+        There you have it.
+    </p>
+</body>
+
+</html>
