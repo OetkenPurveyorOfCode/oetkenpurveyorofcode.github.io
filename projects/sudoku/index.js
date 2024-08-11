@@ -112,10 +112,12 @@ WebAssembly.instantiateStreaming(fetch("./wasm.wasm"), {
             }
             let result = document.getElementById("result");
             result.innerHTML = "Solved.";
+            result.style.backgroundColor = "#A0F0A0"
         }
         else {
             let result = document.getElementById("result");
             result.innerHTML = "Unsolvable.";
+            result.style.backgroundColor = "#F0A0A0"
         }
     });
 });
