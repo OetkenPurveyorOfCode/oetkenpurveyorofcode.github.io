@@ -1,7 +1,13 @@
 <head>
     <title> My blog </title>
+    <style>
+        #Suicide_Countdown {
+            color: white;
+        }
+    </style>
 </head>
-<body> 
+<body>
+    <div id="Suicide_Countdown"></div>
     <h1>Projects</h1>
     <ul>
         <li>
@@ -25,4 +31,10 @@
             <a href="./blog/powerpoint/">The ideal aspect ratio of powerpoint slides</a>
         </li>
     </ul>
+    <script>
+        let suicide_countdown = document.getElementById("Suicide_Countdown");
+        let goal = new Date('January 19, 1975 23:15:30 GMT+1:00')
+        let hours = (Date.now() - goal ) / 36e5;
+        suicide_countdown.innerHTML = `Suicide in ${hours} hours`;
+    </script>
 </body>
