@@ -1,7 +1,7 @@
 <head>
     <title> My blog </title>
     <style>
-        #Suicide_Countdown {
+        #Countdown {
             color: lightgray;
         }
         * {
@@ -198,7 +198,7 @@ header a + a {
     </style>
 </head>
 <body>
-    <div id="Suicide_Countdown"></div>
+    <div id="Countdown"></div>
     <h1>Projects</h1>
     <ul>
         <li>
@@ -223,7 +223,7 @@ header a + a {
         </li>
     </ul>
     <script>
-        let suicide_countdown = document.getElementById("Suicide_Countdown");
+        let suicide_countdown = document.getElementById("Countdown");
         let goal = new Date('December 31, 2024 23:59:59 GMT+0:00')
         let days = Math.floor((goal -Date.now()) / (36e5*24));
         suicide_countdown.innerHTML = `Irish unification according to Star Trek in at most ${days} days`;
