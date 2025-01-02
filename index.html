@@ -1,14 +1,11 @@
 <head>
     <title> My blog </title>
     <style>
-        #Countdown {
-            color: lightgray;
-        }
-        * {
+* {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
- }
+}
 
 html {
     overflow-y: scroll;
@@ -196,9 +193,9 @@ header a + a {
     color: grey;
 }
     </style>
+    
 </head>
 <body>
-    <div id="Countdown"></div>
     <h1>Projects</h1>
     <ul>
         <li>
@@ -231,24 +228,20 @@ header a + a {
         </li>
     </ul>
 
-    <h1>Quotes</h1>
-    <ul>
-        <li>Qoute of the week ending on the 15. september:
-        <p>
-            <p>
-            <quote>"The naming of cats is a difficult matter. Not just one of your holiday games."</quote><br>
-            - Old Man in Logan's Run
-            </p>
-            Technically, I should mention:  T. S. Eliot's "Old Possum's Book of Practical Cats" as it is credited in the credits of the movie.
-        </p>
-        </li>
-    </ul>
-
-
-    <script>
-        let coolness_countdown = document.getElementById("Countdown");
-        let goal = new Date('December 31, 2024 23:59:59 GMT+0:00')
-        let days = Math.floor((goal -Date.now()) / (36e5*24));
-        coolness_countdown.innerHTML = `Irish unification according to Star Trek in at most ${days} days`;
-    </script>
+    <h1>Pop Culture Quotes</h1>
+    <blockquote>
+        "The naming of cats is a difficult matter. Not just one of your holiday games."
+        <small>Old Man in Logan's Run</small>
+    </blockquote>
+    <br>
+    <blockquote>
+        "Watch it! He's got a broken milk carton!"
+        <small>The big bus</small>
+    </blockquote>
+    <br>
+    <blockquote>
+        <small><b>Rimmer:</b></small> "Step up to red alert!"<br>
+        <small><b>Kryten</b></small> "Are you absolutely sure sir? It does mean changing the bulb."
+        <small>Red Dwarf</small>
+    </blockquote>
 </body>
