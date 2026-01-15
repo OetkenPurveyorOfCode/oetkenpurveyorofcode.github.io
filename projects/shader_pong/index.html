@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Shader Pong</title>
+<style type="text/css" media="screen">
+    #navbar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 40px;
+        background-color: #333;
+        color: white;
+        display: flex;
+        align-items: center;
+        padding: 0 10px;
+        box-sizing: border-box;
+    }
+    #error-panel {
+        position: absolute;
+        top: 40px;
+        left: 0;
+        right: 0;
+        background-color: #f00;
+        color: white;
+        padding: 5px 10px;
+        display: none;
+        z-index: 10;
+    }
+    #export-dropdown {
+        position: absolute;
+        top: 40px;
+        left: 50px;
+        background: white;
+        border: 1px solid #ccc;
+        padding: 10px;
+        display: none;
+        z-index: 20;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    #export-dropdown input {
+        width: 300px;
+        margin-bottom: 5px;
+    }
+    #license-panel {
+        position: absolute;
+        top: 40px;
+        right: 10px;
+        background: white;
+        border: 1px solid #ccc;
+        padding: 10px;
+        display: none;
+        z-index: 20;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        max-width: 400px;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    #editor {
+        position: absolute;
+        top: 40px;
+        right: 0;
+        bottom: 0;
+        left: 0;
+    }
+</style>
+</head>
+<body>
+
+<div id="navbar">
+    <span>Shader Editor</span>
+    <button onclick="editor.setValue(defaultShaderSource); editor.clearSelection();">New</button>
+    <button onclick="const dropdown = document.getElementById('export-dropdown'); const input = document.getElementById('export-url'); if (dropdown.style.display === 'none' || dropdown.style.display === '') { const shader = editor.getValue(); const encoded = btoa(shader); const url = window.location.origin + '/test.html?shader=' + encodeURIComponent(encoded); input.value = url; input.select(); dropdown.style.display = 'block'; } else { dropdown.style.display = 'none'; }">Export</button>
+    <select id="difficulty-select" onchange="localStorage.setItem('aiDifficulty', this.value);">
+        <option value="very-easy">Very Easy</option>
+        <option value="easy">Easy</option>
+        <option value="hard">Hard</option>
+    </select>
+    <button onclick="localStorage.setItem('shader', editor.getValue()); window.location.href='test.html';">Test</button>
+    <button onclick="const panel = document.getElementById('license-panel'); if (panel.style.display === 'none' || panel.style.display === '') { panel.style.display = 'block'; } else { panel.style.display = 'none'; }">About</button>
+</div>
+
+<div id="error-panel">
+    <span id="error-msg"></span>
+    <button onclick="this.parentElement.style.display='none'; document.getElementById('editor').style.top = '40px';" style="float:right; background:none; border:none; color:white; font-size:16px;">Close</button>
+</div>
+
+<div id="export-dropdown">
+    <input type="text" id="export-url" readonly>
+    <button onclick="document.getElementById('export-dropdown').style.display='none';">Close</button>
+</div>
+
+<div id="license-panel">
+    <h3>Ace Editor License</h3>
+    <pre>Copyright (c) 2010, Ajax.org B.V.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+    * Neither the name of Ajax.org B.V. nor the
+      names of its contributors may be used to endorse or promote products
+      derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL AJAX.ORG B.V. BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</pre>
+    <button onclick="document.getElementById('license-panel').style.display='none';">Close</button>
+</div>
+
+<div id="editor"></div>
+
+<script src="/ace-builds/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+<script>
+    const defaultShaderSource = `
+
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+uniform vec2 u_resolution;
+uniform vec2 u_mouse;
+uniform float u_time;
+uniform vec2 u_leftPaddlePos;
+uniform vec2 u_rightPaddlePos;
+uniform vec2 u_ballPos;
+
+void main() {
+    vec2 uv = gl_FragCoord.xy/u_resolution.xy;
+    uv -= 0.5;
+    uv.x *= u_resolution.x / u_resolution.y;
+    uv += 0.5;
+    vec3 color = vec3(0.1, 0.1, 0.1);
+    if (length(uv-u_ballPos) < .05) {
+        color = vec3(1., 0., 1.);
+    }
+    if (length(uv-u_leftPaddlePos) < .05) {
+        color = vec3(1., 0., 1.);
+    }
+    if (length(uv-u_rightPaddlePos) < .05) {
+        color = vec3(1., 0., 1.);
+    }
+    gl_FragColor = vec4(color ,1.0);
+}
+`;
+    document.getElementById('editor').textContent = defaultShaderSource;
+
+    var editor = ace.edit("editor");
+    editor.setTheme("ace/theme/twilight");
+    editor.session.setMode("ace/mode/glsl");
+
+    // Load saved shader
+    const savedShader = localStorage.getItem('shader');
+    if (savedShader) {
+        editor.setValue(savedShader);
+    }
+
+    // Set difficulty dropdown to saved value
+    const savedDifficulty = localStorage.getItem('aiDifficulty') || 'easy';
+    document.getElementById('difficulty-select').value = savedDifficulty;
+
+    // Check for shader error
+    const errorMsg = localStorage.getItem('shaderError');
+    if (errorMsg) {
+        localStorage.removeItem('shaderError');
+        document.getElementById('error-msg').textContent = errorMsg;
+        document.getElementById('error-panel').style.display = 'block';
+        document.getElementById('editor').style.top = '70px';
+        const match = errorMsg.match(/ERROR:\s*\d+:(\d+):(.*)/);
+        if (match) {
+            const row = parseInt(match[1]) - 1;
+            const text = match[2].trim();
+            editor.session.setAnnotations([{
+                row: row,
+                column: 0,
+                text: text,
+                type: 'error'
+            }]);
+            editor.scrollToLine(row, true, true, function(){});
+            editor.gotoLine(row + 1);
+        }
+    }
+</script>
+</body>
+</html>

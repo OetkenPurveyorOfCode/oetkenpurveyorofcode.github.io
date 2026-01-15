@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Shader Pong</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="glcanvas"></canvas>
+    <div id="score-left" style="position: absolute; top: 10px; left: 10px; color: white; font-size: 24px; z-index: 10;">0</div>
+    <div id="score-right" style="position: absolute; top: 10px; right: 10px; color: white; font-size: 24px; z-index: 10;">0</div>
+    <div id="game-lost" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: red; font-size: 48px; font-weight: bold; text-align: center; z-index: 20; display: none;">YOU LOOSE</div>
+    <div id="game-won" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: green; font-size: 48px; font-weight: bold; text-align: center; z-index: 20; display: none;">YOU WIN</div>
+
+    <script>
+        const canvas = document.getElementById('glcanvas');
+        const gl = canvas.getContext('webgl');
+        if (!gl) {
+            alert('WebGL not supported');
+        }
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        gl.viewport(0, 0, canvas.width, canvas.height);
+
+        // Default shader source
+        const defaultShaderSource = `
+            #ifdef GL_ES
+            precision mediump float;
+            #endif
+
+            uniform vec2 u_resolution;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+            uniform vec2 u_leftPaddlePos;
+            uniform vec2 u_rightPaddlePos;
+            uniform vec2 u_ballPos;
+
+            void main() {
+                vec2 st = gl_FragCoord.xy/u_resolution.xy;
+                st.x *= u_resolution.x/u_resolution.y;
+
+                vec3 color = vec3(0.);
+                color = vec3(st.x,st.y,abs(sin(u_time)));
+
+                gl_FragColor = vec4(color,1.0);
+            }
+        `;
+
+        // Vertex shader (simple passthrough)
+        const vertexShaderSource = `
+            attribute vec2 a_position;
+            void main() {
+                gl_Position = vec4(a_position, 0.0, 1.0);
+            }
+        `;
+
+        // Fragment shader from URL param or localStorage
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlShader = urlParams.get('shader');
+        let fragmentShaderSource;
+        if (urlShader) {
+            try {
+                fragmentShaderSource = atob(decodeURIComponent(urlShader));
+            } catch (e) {
+                fragmentShaderSource = localStorage.getItem('shader') || defaultShaderSource;
+            }
+        } else {
+            fragmentShaderSource = localStorage.getItem('shader') || defaultShaderSource;
+        }
+
+        // Compile shader
+        function compileShader(source, type) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                const error = gl.getShaderInfoLog(shader);
+                console.error('Shader compile error:', error);
+                gl.deleteShader(shader);
+                return error;
+            }
+            return shader;
+        }
+
+        const vertexShader = compileShader(vertexShaderSource, gl.VERTEX_SHADER);
+        const fragmentShader = compileShader(fragmentShaderSource, gl.FRAGMENT_SHADER);
+
+        if (typeof fragmentShader === 'string') {
+            // Fragment shader failed, go back to editor with error
+            localStorage.setItem('shaderError', fragmentShader);
+            window.location.href = 'index.html';
+        } else {
+            const program = gl.createProgram();
+            gl.attachShader(program, vertexShader);
+            gl.attachShader(program, fragmentShader);
+            gl.linkProgram(program);
+            if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+                localStorage.setItem('shaderError', gl.getProgramInfoLog(program));
+                window.location.href = 'index.html';
+            } else {
+                gl.useProgram(program);
+
+                // Set up geometry (full screen quad)
+                const positionBuffer = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+                const positions = [
+                    -1, -1,
+                     1, -1,
+                    -1,  1,
+                     1,  1,
+                ];
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+
+                const positionLocation = gl.getAttribLocation(program, 'a_position');
+                gl.enableVertexAttribArray(positionLocation);
+                gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+                // Uniforms
+                const resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
+                const mouseLocation = gl.getUniformLocation(program, 'u_mouse');
+                const timeLocation = gl.getUniformLocation(program, 'u_time');
+                const leftPaddleLocation = gl.getUniformLocation(program, 'u_leftPaddlePos');
+                const rightPaddleLocation = gl.getUniformLocation(program, 'u_rightPaddlePos');
+                const ballLocation = gl.getUniformLocation(program, 'u_ballPos');
+
+                let mouseX = 0, mouseY = 0;
+                canvas.addEventListener('mousemove', (e) => {
+                    mouseX = e.clientX / canvas.width;
+                    mouseY = 1.0 - e.clientY / canvas.height; // Flip Y
+                });
+
+                // Pong game state
+                let ballX = 0.5, ballY = 0.5;
+                let ballVX = 0.01, ballVY = 0.005;
+                let leftPaddleY = 0.5;
+                let rightPaddleY = 0.5;
+                let leftScore = 0, rightScore = 0;
+                let slowMode = true;
+                let gameOver = false;
+                const baseVX = 0.01;
+                const slowVX = 0.005;
+                const maxVY = 0.015; // Maximum vertical speed
+                const paddleHeight = 0.10; // Paddle height
+                const bounceFactor = 0.8; // Controls maximum bounce angle
+
+                // AI state - adjust based on difficulty
+                const difficulty = localStorage.getItem('aiDifficulty') || 'easy';
+                let aiTargetY = 0.5;
+                let aiReactionDelay, aiPaddleSpeed, aiMissChance;
+
+                if (difficulty === 'very-easy') {
+                    aiReactionDelay = 15; // Even more delay for very easy
+                    aiPaddleSpeed = 0.01; // Very slow movement
+                    aiMissChance = 1.0; // 100% chance to miss shots
+                } else if (difficulty === 'easy') {
+                    aiReactionDelay = 12; // More delay for easy
+                    aiPaddleSpeed = 0.015; // Slower movement for easy
+                    aiMissChance = 0.2; // 20% chance to miss shots
+                } else { // hard
+                    aiReactionDelay = 6; // Less delay for hard
+                    aiPaddleSpeed = 0.025; // Faster movement for hard
+                    aiMissChance = 0.0; // No misses in hard mode
+                }
+
+                let aiDelayCounter = 0;
+
+                // Predictive AI: Calculate where ball will be when it reaches right paddle
+                function predictBallPosition() {
+                    let simX = ballX;
+                    let simY = ballY;
+                    let simVX = ballVX;
+                    let simVY = ballVY;
+                    let speed = slowMode ? slowVX : baseVX;
+
+                    // Simulate ball movement until it reaches x >= 0.9
+                    let steps = 0;
+                    const maxSteps = 200; // Prevent infinite loops
+
+                    while (simX < 0.9 && steps < maxSteps) {
+                        simX += simVX > 0 ? speed : -speed;
+                        simY += simVY;
+
+                        // Handle wall bounces
+                        if (simY <= 0.05 || simY >= 0.95) {
+                            simVY = -simVY;
+                        }
+                        steps++;
+                    }
+
+                    // Clamp to playable area
+                    return Math.max(0.05 + paddleHeight/2, Math.min(0.95 - paddleHeight/2, simY));
+                }
+
+                function render(time) {
+                    // Don't update game state if game is over
+                    if (!gameOver) {
+                        // Update pong game state
+                        leftPaddleY = mouseY;
+
+                        // Advanced AI with prediction and reaction delay
+                        aiDelayCounter++;
+                        if (aiDelayCounter >= aiReactionDelay) {
+                            // Random chance to miss in easy mode
+                            if (Math.random() >= aiMissChance) {
+                                aiTargetY = predictBallPosition();
+                            } else {
+                                // Miss by aiming at a random wrong position
+                                const missOffset = (Math.random() - 0.5) * 0.6; // Random offset up to ±0.3
+                                aiTargetY = Math.max(0.05 + paddleHeight/2,
+                                             Math.min(0.95 - paddleHeight/2,
+                                             predictBallPosition() + missOffset));
+                            }
+                            aiDelayCounter = 0;
+                        }
+
+                        // Smooth paddle movement toward target
+                        const paddleDiff = aiTargetY - rightPaddleY;
+                        if (Math.abs(paddleDiff) > 0.001) {
+                            rightPaddleY += Math.sign(paddleDiff) * Math.min(aiPaddleSpeed, Math.abs(paddleDiff));
+                        }
+                        // Clamp paddle to playable area
+                        rightPaddleY = Math.max(0.05 + paddleHeight/2, Math.min(0.95 - paddleHeight/2, rightPaddleY));
+
+                        let speed = slowMode ? slowVX : baseVX;
+                        ballX += ballVX > 0 ? speed : -speed;
+                        ballY += ballVY;
+
+                        if (ballY <= 0.05 || ballY >= 0.95) {
+                            ballVY = -ballVY;
+                        }
+
+                        // Angle-based collision with paddles
+                        if (ballX <= 0.1 && Math.abs(ballY - leftPaddleY) < paddleHeight / 2) {
+                            // Calculate relative hit position on paddle (-1 to 1)
+                            const relativeHit = (ballY - leftPaddleY) / (paddleHeight / 2);
+                            // Set bounce angle based on hit position
+                            ballVY = relativeHit * bounceFactor * maxVY;
+                            // Ensure ball goes right after left paddle hit
+                            ballVX = Math.abs(ballVX);
+                            if (slowMode) slowMode = false;
+                        }
+                        if (ballX >= 0.9 && Math.abs(ballY - rightPaddleY) < paddleHeight / 2) {
+                            // Calculate relative hit position on paddle (-1 to 1)
+                            const relativeHit = (ballY - rightPaddleY) / (paddleHeight / 2);
+                            // Set bounce angle based on hit position
+                            ballVY = relativeHit * bounceFactor * maxVY;
+                            // Ensure ball goes left after right paddle hit
+                            ballVX = -Math.abs(ballVX);
+                            if (slowMode) slowMode = false;
+                        }
+
+                        if (ballX < 0) {
+                            rightScore++;
+                            document.getElementById('score-right').textContent = rightScore;
+
+                            // Check for game over (AI wins at 10 points)
+                            if (rightScore >= 10) {
+                                gameOver = true;
+                                document.getElementById('game-lost').style.display = 'block';
+                            } else {
+                                slowMode = true;
+                                ballX = 0.5;
+                                ballY = 0.5;
+                                ballVX = -baseVX;
+                            }
+                        } else if (ballX > 1) {
+                            leftScore++;
+                            document.getElementById('score-left').textContent = leftScore;
+
+                            // Check for game over (Player wins at 10 points)
+                            if (leftScore >= 10) {
+                                gameOver = true;
+                                document.getElementById('game-won').style.display = 'block';
+                            } else {
+                                slowMode = true;
+                                ballX = 0.5;
+                                ballY = 0.5;
+                                ballVX = baseVX;
+                            }
+                        }
+                    }
+
+                    // Always update uniforms and render (even in game over)
+                    // Set uniforms
+                    gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
+                    gl.uniform2f(mouseLocation, mouseX, mouseY);
+                    gl.uniform1f(timeLocation, time * 0.001); // Convert to seconds
+                    gl.uniform2f(leftPaddleLocation, 0.05, leftPaddleY);
+                    gl.uniform2f(rightPaddleLocation, 0.95, rightPaddleY);
+                    gl.uniform2f(ballLocation, ballX, ballY);
+
+                    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+                    requestAnimationFrame(render);
+                }
+
+                requestAnimationFrame(render);
+            }
+        }
+    </script>
+</body>
+</html>
