@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <title>Shader Pong</title>
+<meta charset="UTF-8">
 <style type="text/css" media="screen">
     #navbar {
         position: absolute;
@@ -15,6 +16,25 @@
         align-items: center;
         padding: 0 10px;
         box-sizing: border-box;
+    }
+    #navbar button {
+        background-color: #555;
+        color: white;
+        border: 1px solid #777;
+        padding: 5px 10px;
+        margin: 0 5px;
+        cursor: pointer;
+        border-radius: 3px;
+    }
+    #navbar button:hover {
+        background-color: #666;
+    }
+    #navbar select {
+        background-color: #555;
+        color: white;
+        border: 1px solid #777;
+        padding: 5px;
+        margin: 0 5px;
     }
     #error-panel {
         position: absolute;
@@ -31,16 +51,31 @@
         position: absolute;
         top: 40px;
         left: 50px;
-        background: white;
-        border: 1px solid #ccc;
+        background: #333 ;
+        color: white ;
+        border: 1px solid #777;
         padding: 10px;
         display: none;
         z-index: 20;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.5);
     }
     #export-dropdown input {
         width: 300px;
         margin-bottom: 5px;
+        background: #555 ;
+        color: white ;
+        border: 1px solid #777 ;
+        padding: 5px;
+    }
+    #export-dropdown button {
+        background: #555 ;
+        color: white ;
+        border: 1px solid #777 ;
+        padding: 5px 10px;
+        cursor: pointer;
+    }
+    #export-dropdown button:hover {
+        background: #666 ;
     }
     #license-panel {
         position: absolute;
@@ -70,14 +105,14 @@
 <div id="navbar">
     <span>Shader Editor</span>
     <button onclick="editor.setValue(defaultShaderSource); editor.clearSelection();">New</button>
-    <button onclick="const dropdown = document.getElementById('export-dropdown'); const input = document.getElementById('export-url'); if (dropdown.style.display === 'none' || dropdown.style.display === '') { const shader = editor.getValue(); const encoded = btoa(shader); const url = window.location.origin + '/test.html?shader=' + encodeURIComponent(encoded); input.value = url; input.select(); dropdown.style.display = 'block'; } else { dropdown.style.display = 'none'; }">Export</button>
+    <button onclick="event.stopPropagation(); const dropdown = document.getElementById('export-dropdown'); const input = document.getElementById('export-url'); if (dropdown.style.display === 'none' || dropdown.style.display === '') { const shader = editor.getValue(); const encoded = btoa(shader); const url = window.location.origin + '/test.html?shader=' + encodeURIComponent(encoded); input.value = url; input.select(); dropdown.style.display = 'block'; } else { dropdown.style.display = 'none'; }">Export</button>
     <select id="difficulty-select" onchange="localStorage.setItem('aiDifficulty', this.value);">
         <option value="very-easy">Very Easy</option>
         <option value="easy">Easy</option>
         <option value="hard">Hard</option>
     </select>
     <button onclick="localStorage.setItem('shader', editor.getValue()); window.location.href='test.html';">Test</button>
-    <button onclick="const panel = document.getElementById('license-panel'); if (panel.style.display === 'none' || panel.style.display === '') { panel.style.display = 'block'; } else { panel.style.display = 'none'; }">About</button>
+    <button onclick="event.stopPropagation(); const panel = document.getElementById('license-panel'); if (panel.style.display === 'none' || panel.style.display === '') { panel.style.display = 'block'; } else { panel.style.display = 'none'; }">About</button>
 </div>
 
 <div id="error-panel">
@@ -87,6 +122,7 @@
 
 <div id="export-dropdown">
     <input type="text" id="export-url" readonly>
+    <button onclick="navigator.clipboard.writeText(document.getElementById('export-url').value); this.textContent='Copied!'; setTimeout(() => this.textContent='📋', 1000);">📋</button>
     <button onclick="document.getElementById('export-dropdown').style.display='none';">Close</button>
 </div>
 
@@ -115,7 +151,8 @@ DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</pre>
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+</pre>
     <button onclick="document.getElementById('license-panel').style.display='none';">Close</button>
 </div>
 
@@ -191,6 +228,24 @@ void main() {
             editor.gotoLine(row + 1);
         }
     }
+
+    // Close panels when clicking outside
+    document.addEventListener('click', function(event) {
+        const licensePanel = document.getElementById('license-panel');
+        const exportDropdown = document.getElementById('export-dropdown');
+        const exportButton = document.querySelector('#navbar button:nth-child(2)'); // The Export button
+        const aboutButton = document.querySelector('#navbar button:last-child'); // The About button
+
+        // Close license panel if click is outside
+        if (licensePanel.style.display !== 'none' && !licensePanel.contains(event.target) && event.target !== aboutButton) {
+            licensePanel.style.display = 'none';
+        }
+
+        // Close export dropdown if click is outside
+        if (exportDropdown.style.display !== 'none' && !exportDropdown.contains(event.target) && event.target !== exportButton) {
+            exportDropdown.style.display = 'none';
+        }
+    });
 </script>
 </body>
 </html>

@@ -32,30 +32,6 @@
         canvas.height = window.innerHeight;
         gl.viewport(0, 0, canvas.width, canvas.height);
 
-        // Default shader source
-        const defaultShaderSource = `
-            #ifdef GL_ES
-            precision mediump float;
-            #endif
-
-            uniform vec2 u_resolution;
-            uniform vec2 u_mouse;
-            uniform float u_time;
-            uniform vec2 u_leftPaddlePos;
-            uniform vec2 u_rightPaddlePos;
-            uniform vec2 u_ballPos;
-
-            void main() {
-                vec2 st = gl_FragCoord.xy/u_resolution.xy;
-                st.x *= u_resolution.x/u_resolution.y;
-
-                vec3 color = vec3(0.);
-                color = vec3(st.x,st.y,abs(sin(u_time)));
-
-                gl_FragColor = vec4(color,1.0);
-            }
-        `;
-
         // Vertex shader (simple passthrough)
         const vertexShaderSource = `
             attribute vec2 a_position;
@@ -72,10 +48,12 @@
             try {
                 fragmentShaderSource = atob(decodeURIComponent(urlShader));
             } catch (e) {
-                fragmentShaderSource = localStorage.getItem('shader') || defaultShaderSource;
+                fragmentShaderSource = localStorage.getItem('shader');
+                if (!fragmentShaderSource) alert("Failed to load shader");
             }
         } else {
-            fragmentShaderSource = localStorage.getItem('shader') || defaultShaderSource;
+            fragmentShaderSource = localStorage.getItem('shader');
+            if (!fragmentShaderSource) alert("Failed to load shader");
         }
 
         // Compile shader
@@ -127,7 +105,6 @@
 
                 // Uniforms
                 const resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
-                const mouseLocation = gl.getUniformLocation(program, 'u_mouse');
                 const timeLocation = gl.getUniformLocation(program, 'u_time');
                 const leftPaddleLocation = gl.getUniformLocation(program, 'u_leftPaddlePos');
                 const rightPaddleLocation = gl.getUniformLocation(program, 'u_rightPaddlePos');
@@ -135,12 +112,12 @@
 
                 let mouseX = 0, mouseY = 0;
                 canvas.addEventListener('mousemove', (e) => {
-                    mouseX = e.clientX / canvas.width;
-                    mouseY = 1.0 - e.clientY / canvas.height; // Flip Y
+                    mouseX = 2*(e.clientX / canvas.width)-1;
+                    mouseY = 2*(1.0 - e.clientY / canvas.height)-1; // Flip Y
                 });
 
                 // Pong game state
-                let ballX = 0.5, ballY = 0.5;
+                let ballX = 0.0, ballY = 0.0;
                 let ballVX = 0.01, ballVY = 0.005;
                 let leftPaddleY = 0.5;
                 let rightPaddleY = 0.5;
@@ -191,14 +168,14 @@
                         simY += simVY;
 
                         // Handle wall bounces
-                        if (simY <= 0.05 || simY >= 0.95) {
+                        if (simY <= -0.95 || simY >= 0.95) {
                             simVY = -simVY;
                         }
                         steps++;
                     }
 
                     // Clamp to playable area
-                    return Math.max(0.05 + paddleHeight/2, Math.min(0.95 - paddleHeight/2, simY));
+                    return Math.max(-0.95 + paddleHeight/2, Math.min(0.95 - paddleHeight/2, simY));
                 }
 
                 function render(time) {
@@ -216,7 +193,7 @@
                             } else {
                                 // Miss by aiming at a random wrong position
                                 const missOffset = (Math.random() - 0.5) * 0.6; // Random offset up to ±0.3
-                                aiTargetY = Math.max(0.05 + paddleHeight/2,
+                                aiTargetY = Math.max(-0.95 + paddleHeight/2,
                                              Math.min(0.95 - paddleHeight/2,
                                              predictBallPosition() + missOffset));
                             }
@@ -229,18 +206,18 @@
                             rightPaddleY += Math.sign(paddleDiff) * Math.min(aiPaddleSpeed, Math.abs(paddleDiff));
                         }
                         // Clamp paddle to playable area
-                        rightPaddleY = Math.max(0.05 + paddleHeight/2, Math.min(0.95 - paddleHeight/2, rightPaddleY));
+                        rightPaddleY = Math.max(-0.95 + paddleHeight/2, Math.min(0.95 - paddleHeight/2, rightPaddleY));
 
                         let speed = slowMode ? slowVX : baseVX;
                         ballX += ballVX > 0 ? speed : -speed;
                         ballY += ballVY;
 
-                        if (ballY <= 0.05 || ballY >= 0.95) {
+                        if (ballY <= -0.95 || ballY >= 0.95) {
                             ballVY = -ballVY;
                         }
 
                         // Angle-based collision with paddles
-                        if (ballX <= 0.1 && Math.abs(ballY - leftPaddleY) < paddleHeight / 2) {
+                        if (ballX <= -0.9 && Math.abs(ballY - leftPaddleY) < paddleHeight / 2) {
                             // Calculate relative hit position on paddle (-1 to 1)
                             const relativeHit = (ballY - leftPaddleY) / (paddleHeight / 2);
                             // Set bounce angle based on hit position
@@ -259,7 +236,7 @@
                             if (slowMode) slowMode = false;
                         }
 
-                        if (ballX < 0) {
+                        if (ballX < -1) {
                             rightScore++;
                             document.getElementById('score-right').textContent = rightScore;
 
@@ -269,8 +246,8 @@
                                 document.getElementById('game-lost').style.display = 'block';
                             } else {
                                 slowMode = true;
-                                ballX = 0.5;
-                                ballY = 0.5;
+                                ballX = 0.0;
+                                ballY = 0.0;
                                 ballVX = -baseVX;
                             }
                         } else if (ballX > 1) {
@@ -283,8 +260,8 @@
                                 document.getElementById('game-won').style.display = 'block';
                             } else {
                                 slowMode = true;
-                                ballX = 0.5;
-                                ballY = 0.5;
+                                ballX = 0.0;
+                                ballY = 0.0;
                                 ballVX = baseVX;
                             }
                         }
@@ -293,9 +270,8 @@
                     // Always update uniforms and render (even in game over)
                     // Set uniforms
                     gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
-                    gl.uniform2f(mouseLocation, mouseX, mouseY);
                     gl.uniform1f(timeLocation, time * 0.001); // Convert to seconds
-                    gl.uniform2f(leftPaddleLocation, 0.05, leftPaddleY);
+                    gl.uniform2f(leftPaddleLocation, -0.95, leftPaddleY);
                     gl.uniform2f(rightPaddleLocation, 0.95, rightPaddleY);
                     gl.uniform2f(ballLocation, ballX, ballY);
 
